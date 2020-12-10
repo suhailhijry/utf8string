@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <utility>
 #include <ostream>
+#include <istream>
 
 namespace ryuk {
     using u8char_t = unsigned char;
@@ -728,8 +729,12 @@ namespace ryuk {
             release();
         }
 
-        friend std::ostream & operator<<(std::ostream& os, const utf8string &str) {
-            return os << reinterpret_cast<const char *>(str._data);   
+        friend std::ostream & operator<<(std::ostream &os, const utf8string &str) {
+            return os << reinterpret_cast<const char *>(str._data);
+        }
+
+        friend std::istream & operator>>(std::istream &is, const utf8string &str) {
+            return is >> str._data;
         }
     };
 };
