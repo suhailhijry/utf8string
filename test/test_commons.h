@@ -42,6 +42,8 @@ namespace ryuk {
 
             std::cout << result;
         }
+
+        #define test_assert(val, message) { if (!(val)) { return (message); } }
     };
 };
 
