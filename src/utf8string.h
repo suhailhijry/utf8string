@@ -450,16 +450,18 @@ namespace ryuk {
         }
     };
 
+    template<size_t SSO_SIZE = 32>
     class utf8string {
     private:
-        size_t _capacity;
+        size_t _capacity = SSO_SIZE;
         size_t _length;
         u8char_t *_data;
+        u8char_t _ssoData[SSO_SIZE];
 
         void grow_buffer(size_t amount) {
             size_t totalLength = _length + amount - 1;
             if (_capacity < totalLength) {
-                grow(totalLength - _capacity);    
+                grow(totalLength - _capacity);
             }
         }
 
@@ -474,18 +476,34 @@ namespace ryuk {
             _length = otherLength;
         }
 
+        void copy_other_sso(const void *other, size_t otherLength) {
+            assert(_capacity >= otherLength);
+            assert(SSO_SIZE >= otherLength);
+            memcpy_s(_ssoData, _capacity * sizeof(u8char_t), other, otherLength);
+            _length = otherLength;
+        }
+
         void move_other(utf8string &&other) {
             _capacity = other._capacity;
             _length = other._length;
             _data = other._data;
+            _ssoData = other._ssoData;
             other._capacity = 0;
             other._length = 0;
             other._data = nullptr;
+            other._ssoData = nullptr;
         }
 
         void append_other(const void* other, size_t otherLength) {
             assert(_capacity >= _length + otherLength);
             memcpy_s(&_data[_length -1], _capacity * sizeof(u8char_t), other, otherLength);
+            _length += otherLength;
+        }
+
+        void append_other_sso(const void* other, size_t otherLength) {
+            assert(_capacity >= _length + otherLength);
+            assert(SSO_SIZE >= _length + otherLength);
+            memcpy_s(&_ssoData[_length -1], _capacity * sizeof(u8char_t), other, otherLength);
             _length += otherLength;
         }
 
@@ -547,11 +565,20 @@ namespace ryuk {
         }
 
         utf8string_iterator begin() const {
+            if (_capacity == SSO_SIZE) {
+                return utf8string_iterator(_ssoData, _ssoData + _length);
+            }
+
             return utf8string_iterator(_data, _data + _length);
         }
 
         utf8string_iterator end() const {
-            u8char_t *end = _data + _length;
+            u8char_t *end = _ssoData + _length;
+            if (_capacity == SSO_SIZE) {
+                return utf8string_iterator(end, end);
+            }
+
+            end = _data + _length;
             return utf8string_iterator(end, end);
         }
 
@@ -564,6 +591,10 @@ namespace ryuk {
         }
 
         size_t count() {
+            if (capacity == SSO_SIZE) {
+                return internal::distance(_ssoData, &_ssoData[_length - 1]);
+            }
+
             return internal::distance(_data, &_data[_length - 1]);
         }
 
@@ -579,24 +610,60 @@ namespace ryuk {
             --_length;
 
             size_t seqlen = internal::sequence_length(c);
-            //                               + 1 for the null terminator
-            ensure_capacity(_length + seqlen + 1);
 
-            internal::append(c, &_data[_length]);
-            _length += seqlen;
-            _data[_length] = '\0';
-            ++_length;
+            if (_length + seqlen < SSO_SIZE) {
+                internal::append(c, &_ssoData[_length]);
+                _length += seqlen;
+                _ssoData[_length] = '\0';
+                ++_length;
+            } else {
+                //                               + 1 for the null terminator
+                ensure_capacity(_length + seqlen + 1);
+                internal::append(c, &_data[_length]);
+                _length += seqlen;
+                _data[_length] = '\0';
+                ++_length;
+            }
+        }
+
+        void push(u8char_t c) {
+            push(static_cast<u32char_t>(c));
+        }
+
+        void push(char c) {
+            push(static_cast<u32char_t>(c));
         }
 
         void append(const char *other) {
             size_t length = strlen(other);
-            ensure_capacity(_length + length);
-            append_other(other, length);
+            if (_length + length < SSO_SIZE) {
+                append_other_sso(other, length);
+            } else {
+                if (_capacity == SSO_SIZE) {
+                    ensure_capacity(_length + SSO_SIZE);
+                    append_other(_ssoData, SSO_SIZE);
+                }
+                ensure_capacity(_length + length);
+                append_other(other, length);
+            }
         }
 
         void append(const utf8string &other) {
-            ensure_capacity(_length + other._length);
-            append_other(other._data, other._length);
+            if (_length + other._length < SSO_SIZE) {
+                if (other._capacity == SSO_SIZE) {
+                    append_other_sso(other._ssoData, other._length);
+                } else {
+                    append_other_sso(other._data, other._length);
+                }
+            } else {
+                if (_capacity == SSO_SIZE) {
+                    ensure_capacity(_length + SSO_SIZE);
+                    append_other(_ssoData, SSO_SIZE);
+                }
+
+                ensure_capacity(_length + other._length);
+                append_other(other._data, other._length);
+            }
         }
         
         u8char_t octet_at(size_t index) const {
@@ -685,16 +752,36 @@ namespace ryuk {
         }
 
         utf8string & operator=(const char *other) {
-            release();
             size_t length = strlen(other) + 1;
-            ensure_capacity(length);
-            copy_other(other, length);
+            if (length > SSO_SIZE) {
+                ensure_capacity(length);
+                copy_other(other, length);
+            } else {
+                if (_capacity > SSO_SIZE) {
+                    release();
+                    _capacity = SSO_SIZE;
+                }
+                copy_other_sso(other, length);
+            }
             return *this;
         }
 
         utf8string & operator=(const utf8string &other) {
-            release();
-            copy_other(other._data, other._length);
+            if (other._length > SSO_SIZE) {
+                ensure_capacity(other._length);
+                copy_other(other._data, other._length);
+            } else {
+                if (_capacity > SSO_SIZE) {
+                    release();
+                    _capacity = SSO_SIZE;
+                }
+
+                if (other._capacity == SSO_SIZE) {
+                    copy_other_sso(other._ssoData);
+                } else {
+                    copy_other_sso(other._data);
+                }
+            }
             return *this;
         }
 
@@ -706,19 +793,31 @@ namespace ryuk {
 
         utf8string() {
             _length = 1;
-            _capacity = 1;
+            _capacity = SSO_SIZE == 0 ? 1 : SSO_SIZE;
             _data = nullptr;
         }
 
         utf8string(const char *other) {
             size_t length = strlen(other) + 1;
-            init_buffer(length);
-            copy_other(other, length);
+            if (length > SSO_SIZE) {
+                init_buffer(length);
+                copy_other(other, length);
+            } else {
+                copy_other_sso(other, length);
+            }
         }
 
         utf8string(const utf8string &other) {
-            init_buffer(other._length);
-            copy_other(other._data, other._length);
+            if (other._length > SSO_SIZE) {
+                init_buffer(other._length);
+                copy_other(other._data, other._length);
+            } else {
+                if (other._capacity == SSO_SIZE) {
+                    copy_other_sso(other._ssoData, other._length);
+                } else {
+                    copy_other_sso(other._data, other._length);
+                }
+            }
         }
 
         utf8string(utf8string &&other) {
