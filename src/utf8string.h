@@ -372,51 +372,51 @@ namespace ryuk {
         }
     };
 
-    class utf8string_iterator {
+    class basic_utf8string_iterator {
     private:
         u8char_t *_begin;
         u8char_t *_end;
         u8char_t *_current;
 
     public:
-        utf8string_iterator(u8char_t *begin, u8char_t *end) : _begin(begin), _end(end) {
+        basic_utf8string_iterator(u8char_t *begin, u8char_t *end) : _begin(begin), _end(end) {
             assert(begin);
             assert(end);
             _current = begin;
         }
 
-        ~utf8string_iterator() = default;
-        utf8string_iterator(const utf8string_iterator &) = default;
-        utf8string_iterator(utf8string_iterator &&) = default;
-        utf8string_iterator & operator=(const utf8string_iterator &) = default;
-        utf8string_iterator & operator=(utf8string_iterator &&) = default;
+        ~basic_utf8string_iterator() = default;
+        basic_utf8string_iterator(const basic_utf8string_iterator &) = default;
+        basic_utf8string_iterator(basic_utf8string_iterator &&) = default;
+        basic_utf8string_iterator & operator=(const basic_utf8string_iterator &) = default;
+        basic_utf8string_iterator & operator=(basic_utf8string_iterator &&) = default;
 
-        bool operator==(const utf8string_iterator &other) {
+        bool operator==(const basic_utf8string_iterator &other) {
             return (_current == other._current);
         }
 
-        bool operator!=(const utf8string_iterator &other) {
+        bool operator!=(const basic_utf8string_iterator &other) {
             return !(operator==(other));
         }
 
-        utf8string_iterator & operator++() {
+        basic_utf8string_iterator & operator++() {
             internal::next(_current, _end);
             return *this;
         }
 
-        utf8string_iterator operator++(int) {
-            utf8string_iterator temp = *this;
+        basic_utf8string_iterator operator++(int) {
+            basic_utf8string_iterator temp = *this;
             internal::next(_current, _end);
             return temp;
         }
 
-        utf8string_iterator & operator--() {
+        basic_utf8string_iterator & operator--() {
             internal::previous(_current, _begin);
             return *this;
         }
 
-        utf8string_iterator operator--(int) {
-            utf8string_iterator temp = *this;
+        basic_utf8string_iterator operator--(int) {
+            basic_utf8string_iterator temp = *this;
             internal::previous(_current, _begin);
             return temp;
         }
@@ -425,19 +425,19 @@ namespace ryuk {
             return internal::peek_next(_current, _end);
         }
 
-        bool operator<(const utf8string_iterator &other) {
+        bool operator<(const basic_utf8string_iterator &other) {
             return (_current < other._current);
         }
 
-        bool operator>(const utf8string_iterator &other) {
+        bool operator>(const basic_utf8string_iterator &other) {
             return (_current > other._current);
         }
 
-        bool operator<=(const utf8string_iterator &other) {
+        bool operator<=(const basic_utf8string_iterator &other) {
             return (_current <= other._current);
         }
 
-        bool operator>=(const utf8string_iterator &other) {
+        bool operator>=(const basic_utf8string_iterator &other) {
             return (_current >= other._current);
         }
 
@@ -450,8 +450,8 @@ namespace ryuk {
         }
     };
 
-    template<size_t SSO_SIZE = 32>
-    class utf8string {
+    template<size_t SSO_SIZE>
+    class basic_utf8string {
     private:
         size_t _capacity = SSO_SIZE;
         size_t _length;
@@ -483,7 +483,7 @@ namespace ryuk {
             _length = otherLength;
         }
 
-        void move_other(utf8string &&other) {
+        void move_other(basic_utf8string &&other) {
             _capacity = other._capacity;
             _length = other._length;
             _data = other._data;
@@ -564,22 +564,22 @@ namespace ryuk {
             return _data;
         }
 
-        utf8string_iterator begin() const {
+        basic_utf8string_iterator begin() const {
             if (_capacity == SSO_SIZE) {
-                return utf8string_iterator(_ssoData, _ssoData + _length);
+                return basic_utf8string_iterator(_ssoData, _ssoData + _length);
             }
 
-            return utf8string_iterator(_data, _data + _length);
+            return basic_utf8string_iterator(_data, _data + _length);
         }
 
-        utf8string_iterator end() const {
+        basic_utf8string_iterator end() const {
             u8char_t *end = _ssoData + _length;
             if (_capacity == SSO_SIZE) {
-                return utf8string_iterator(end, end);
+                return basic_utf8string_iterator(end, end);
             }
 
             end = _data + _length;
-            return utf8string_iterator(end, end);
+            return basic_utf8string_iterator(end, end);
         }
 
         size_t size() {
@@ -648,7 +648,7 @@ namespace ryuk {
             }
         }
 
-        void append(const utf8string &other) {
+        void append(const basic_utf8string &other) {
             if (_length + other._length < SSO_SIZE) {
                 if (other._capacity == SSO_SIZE) {
                     append_other_sso(other._ssoData, other._length);
@@ -673,8 +673,8 @@ namespace ryuk {
 
         u32char_t at(size_t index) const {
             assert(index < _length);
-            utf8string_iterator itr = begin();
-            utf8string_iterator end = this->end();
+            basic_utf8string_iterator itr = begin();
+            basic_utf8string_iterator end = this->end();
 
             for (size_t i = 0; i < index; ++i) {
                 if (itr == end) {
@@ -709,7 +709,7 @@ namespace ryuk {
             return !operator==(other);
         }
 
-        bool operator==(const utf8string &other) const {
+        bool operator==(const basic_utf8string &other) const {
             if (_length != other._length) { return false; }
 
             int result = memcmp(_data, other._data, _length * sizeof(u8char_t));
@@ -722,36 +722,36 @@ namespace ryuk {
             return false;
         }
 
-        bool operator!=(const utf8string &other) const {
+        bool operator!=(const basic_utf8string &other) const {
             return !operator==(other);
         }
 
-        utf8string & operator+=(u32char_t c) {
+        basic_utf8string & operator+=(u32char_t c) {
             push(c);
             return *this;
         }
 
-        utf8string & operator+=(u8char_t c) {
+        basic_utf8string & operator+=(u8char_t c) {
             push(static_cast<u32char_t>(c));
             return *this;
         }
 
-        utf8string & operator+=(char c) {
+        basic_utf8string & operator+=(char c) {
             push(static_cast<u32char_t>(c));
             return *this;
         }
 
-        utf8string & operator+=(const char *other) {
+        basic_utf8string & operator+=(const char *other) {
             append(other);
             return *this;            
         }
 
-        utf8string & operator+=(const utf8string &other) {
+        basic_utf8string & operator+=(const basic_utf8string &other) {
             append(other);
             return *this;
         }
 
-        utf8string & operator=(const char *other) {
+        basic_utf8string & operator=(const char *other) {
             size_t length = strlen(other) + 1;
             if (length > SSO_SIZE) {
                 ensure_capacity(length);
@@ -766,7 +766,7 @@ namespace ryuk {
             return *this;
         }
 
-        utf8string & operator=(const utf8string &other) {
+        basic_utf8string & operator=(const basic_utf8string &other) {
             if (other._length > SSO_SIZE) {
                 ensure_capacity(other._length);
                 copy_other(other._data, other._length);
@@ -785,19 +785,19 @@ namespace ryuk {
             return *this;
         }
 
-        utf8string & operator=(utf8string&& other) {
+        basic_utf8string & operator=(basic_utf8string&& other) {
             release();
             move_other(std::move(other));
             return *this;
         }
 
-        utf8string() {
+        basic_utf8string() {
             _length = 1;
             _capacity = SSO_SIZE == 0 ? 1 : SSO_SIZE;
             _data = nullptr;
         }
 
-        utf8string(const char *other) {
+        basic_utf8string(const char *other) {
             size_t length = strlen(other) + 1;
             if (length > SSO_SIZE) {
                 init_buffer(length);
@@ -807,7 +807,7 @@ namespace ryuk {
             }
         }
 
-        utf8string(const utf8string &other) {
+        basic_utf8string(const basic_utf8string &other) {
             if (other._length > SSO_SIZE) {
                 init_buffer(other._length);
                 copy_other(other._data, other._length);
@@ -820,22 +820,24 @@ namespace ryuk {
             }
         }
 
-        utf8string(utf8string &&other) {
+        basic_utf8string(basic_utf8string &&other) {
             move_other(std::move(other));
         }
 
-        ~utf8string() {
+        ~basic_utf8string() {
             release();
         }
 
-        friend std::ostream & operator<<(std::ostream &os, const utf8string &str) {
+        friend std::ostream & operator<<(std::ostream &os, const basic_utf8string &str) {
             return os << reinterpret_cast<const char *>(str._data);
         }
 
-        friend std::istream & operator>>(std::istream &is, const utf8string &str) {
+        friend std::istream & operator>>(std::istream &is, const basic_utf8string &str) {
             return is >> str._data;
         }
     };
+
+    using utf8string = basic_utf8string<32>;
 };
 
 #endif
