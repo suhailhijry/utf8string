@@ -1,10 +1,8 @@
 /*
-    Original UTF8 Support code by Nemanja Trifunovic, I modified it,
-    and  only took the parts that I needed for this class.
+    The original UTF-8 support code was created by [Nemanja Trifunovic](https://github.com/nemtrif/utfcpp),
+    I only modified it to fit my coding style, and took the parts that I needed for this implementation.
 
-    Both his code and mine is under the same license, the BSL 1.0
-
-    Check his work out at: https://github.com/nemtrif/utfcpp
+    Both his code and mine are under the same license, the BSL 1.0
 */
 
 // Copyright 2006 Nemanja Trifunovic
