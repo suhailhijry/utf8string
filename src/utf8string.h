@@ -38,6 +38,7 @@
 #define RYUK_UTF8_H
 
 #include <cstdint>
+#include <assert.h>
 
 namespace ryuk {
     using u8char_t = unsigned char;
@@ -363,6 +364,84 @@ namespace ryuk {
             }
 
             return result;
+        }
+    };
+
+    class utf8string_iterator {
+    private:
+        u8char_t *_begin;
+        u8char_t *_end;
+        u8char_t *_current;
+
+    public:
+        utf8string_iterator(u8char_t *begin, u8char_t *end) : _begin(begin), _end(end) {
+            assert(begin);
+            assert(end);
+            _current = begin;
+        }
+
+        ~utf8string_iterator() = default;
+        utf8string_iterator(const utf8string_iterator &) = default;
+        utf8string_iterator(utf8string_iterator &&) = default;
+        utf8string_iterator & operator=(const utf8string_iterator &) = default;
+        utf8string_iterator & operator=(utf8string_iterator &&) = default;
+
+        bool operator==(const utf8string_iterator &other) {
+            return (_current == other._current);
+        }
+
+        bool operator!=(const utf8string_iterator &other) {
+            return !(operator==(other));
+        }
+
+        utf8string_iterator & operator++() {
+            internal::next(_current, _end);
+            return *this;
+        }
+
+        utf8string_iterator operator++(int) {
+            utf8string_iterator temp = *this;
+            internal::next(_current, _end);
+            return temp;
+        }
+
+        utf8string_iterator & operator--() {
+            internal::previous(_current, _begin);
+            return *this;
+        }
+
+        utf8string_iterator operator--(int) {
+            utf8string_iterator temp = *this;
+            internal::previous(_current, _begin);
+            return temp;
+        }
+
+        u32char_t operator*() {
+            return internal::peek_next(_current, _end);
+        }
+
+        bool operator<(const utf8string_iterator &other) {
+            return (_current < other._current);
+        }
+
+        bool operator>(const utf8string_iterator &other) {
+            return (_current > other._current);
+        }
+
+        bool operator<=(const utf8string_iterator &other) {
+            return (_current <= other._current);
+        }
+
+        bool operator>=(const utf8string_iterator &other) {
+            return (_current >= other._current);
+        }
+
+        u8char_t *begin() {
+            return _begin;
+        }
+
+        u8char_t *end() {
+            return _end;
         }
     };
 };
