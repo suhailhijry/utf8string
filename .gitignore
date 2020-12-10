@@ -1,0 +1,10 @@
+*.so
+*.dll
+*.lib
+*.bin
+*.exe
+**.vs/
+**.vscode/
+**[Ll]ib/
+**[Bb]in/
+**[Bb]uild/
