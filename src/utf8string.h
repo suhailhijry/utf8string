@@ -525,10 +525,6 @@ namespace ryuk {
             _capacity = 1;
         }
 
-        friend std::ostream & operator<<(std::ostream& os, const utf8string &str) {
-            return os << reinterpret_cast<const char *>(str._data);   
-        }
-
     public:
         void grow(size_t amount) {
             assert(amount != SIZE_MAX);
@@ -730,6 +726,10 @@ namespace ryuk {
 
         ~utf8string() {
             release();
+        }
+
+        friend std::ostream & operator<<(std::ostream& os, const utf8string &str) {
+            return os << reinterpret_cast<const char *>(str._data);   
         }
     };
 };
