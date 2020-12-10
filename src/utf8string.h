@@ -42,6 +42,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <utility>
+#include <ostream>
 
 namespace ryuk {
     using u8char_t = unsigned char;
@@ -522,6 +523,10 @@ namespace ryuk {
 
             _length = 1;
             _capacity = 1;
+        }
+
+        friend std::ostream & operator<<(std::ostream& os, const utf8string &str) {
+            return os << reinterpret_cast<const char *>(str._data);   
         }
 
     public:
