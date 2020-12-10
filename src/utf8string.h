@@ -37,8 +37,11 @@
 #ifndef RYUK_UTF8_H
 #define RYUK_UTF8_H
 
-#include <cstdint>
+#include <stdint.h>
 #include <assert.h>
+#include <string.h>
+#include <stdlib.h>
+#include <utility>
 
 namespace ryuk {
     using u8char_t = unsigned char;
@@ -442,6 +445,286 @@ namespace ryuk {
 
         u8char_t *end() {
             return _end;
+        }
+    };
+
+    class utf8string {
+    private:
+        size_t _capacity;
+        size_t _length;
+        u8char_t *_data;
+
+        void grow_buffer(size_t amount) {
+            size_t totalLength = _length + amount - 1;
+            if (_capacity < totalLength) {
+                grow(totalLength - _capacity);    
+            }
+        }
+
+        void init_buffer(size_t capacity) {
+            _data = reinterpret_cast<u8char_t *>(malloc(capacity * sizeof(u8char_t)));
+            _capacity = capacity;
+        }
+
+        void copy_other(const void *other, size_t otherLength) {
+            assert(_capacity >= otherLength);
+            memcpy_s(_data, _capacity * sizeof(u8char_t), other, otherLength);
+            _length = otherLength;
+        }
+
+        void move_other(utf8string &&other) {
+            _capacity = other._capacity;
+            _length = other._length;
+            _data = other._data;
+            other._capacity = 0;
+            other._length = 0;
+            other._data = nullptr;
+        }
+
+        void append_other(const void* other, size_t otherLength) {
+            assert(_capacity >= _length + otherLength);
+            memcpy_s(&_data[_length -1], _capacity * sizeof(u8char_t), other, otherLength);
+            _length += otherLength;
+        }
+
+        void ensure_capacity(size_t capacity) {
+            assert(capacity != SIZE_MAX);
+            if (capacity > _capacity) {
+                grow(capacity - _capacity);
+            }
+        }
+
+        void resize(size_t newCapacity) {
+            if (newCapacity == _capacity) { return; }
+
+            if (_capacity == 1) {
+                _data = reinterpret_cast<u8char_t *>(malloc(newCapacity * sizeof(u8char_t)));
+                if (_data) {
+                    _capacity = newCapacity;
+                }
+                return;
+            }
+
+            assert(newCapacity >= _length);
+
+            _data = reinterpret_cast<u8char_t *>(realloc(_data, newCapacity * sizeof(u8char_t)));
+
+            if (_data) {
+                _capacity = newCapacity;
+            }
+        }
+
+        void release() {
+            if (_data) {
+                free(_data);
+                _data = nullptr;
+            }
+
+            _length = 1;
+            _capacity = 1;
+        }
+
+    public:
+        void grow(size_t amount) {
+            assert(amount != SIZE_MAX);
+            size_t newCapacity = _capacity;
+
+            while (newCapacity < _capacity + amount) {
+                newCapacity = newCapacity * 5 / 2 + 8;
+            }
+
+            resize(newCapacity);
+        }
+
+        void shrink_to_fit() {
+            resize(_length);
+        }
+
+        const u8char_t *get_raw() {
+            return _data;
+        }
+
+        utf8string_iterator begin() const {
+            return utf8string_iterator(_data, _data + _length);
+        }
+
+        utf8string_iterator end() const {
+            u8char_t *end = _data + _length;
+            return utf8string_iterator(end, end);
+        }
+
+        size_t size() {
+            return _length - 1;
+        }
+
+        size_t capacity() {
+            return _capacity - 1;
+        }
+
+        size_t count() {
+            return internal::distance(_data, &_data[_length - 1]);
+        }
+
+        void clear() {
+            _length = 1;
+        }
+
+        void push(u32char_t c) {
+            // you should not push a null character!
+            assert(c);
+
+            // remove the null terminator
+            --_length;
+
+            size_t seqlen = internal::sequence_length(c);
+            //                               + 1 for the null terminator
+            ensure_capacity(_length + seqlen + 1);
+
+            internal::append(c, &_data[_length]);
+            _length += seqlen;
+            _data[_length] = '\0';
+            ++_length;
+        }
+
+        void append(const char *other) {
+            size_t length = strlen(other);
+            ensure_capacity(_length + length);
+            append_other(other, length);
+        }
+
+        void append(const utf8string &other) {
+            ensure_capacity(_length + other._length);
+            append_other(other._data, other._length);
+        }
+        
+        u8char_t octet_at(size_t index) const {
+            assert(index < _length);
+            return _data[index];
+        }
+
+        u32char_t at(size_t index) const {
+            assert(index < _length);
+            utf8string_iterator itr = begin();
+            utf8string_iterator end = this->end();
+
+            for (size_t i = 0; i < index; ++i) {
+                if (itr == end) {
+                    return 0;
+                }
+
+                ++itr;
+            }
+
+            return *itr;
+        }
+
+        u32char_t operator[](size_t index) const {
+            return at(index);
+        }
+
+        bool operator==(const char *other) const {
+            size_t length = strlen(other) + 1;
+            if (length != _length) { return false; }
+
+            int result = memcmp(other, _data, _length * sizeof(u8char_t));
+
+            // a result of 0 means identical
+            if (result == 0) {
+                return true;
+            }
+
+            return false;
+        }
+
+        bool operator!=(const char *other) const {
+            return !operator==(other);
+        }
+
+        bool operator==(const utf8string &other) const {
+            if (_length != other._length) { return false; }
+
+            int result = memcmp(_data, other._data, _length * sizeof(u8char_t));
+
+            // a result of 0 means identical
+            if (result == 0) {
+                return true;
+            }
+
+            return false;
+        }
+
+        bool operator!=(const utf8string &other) const {
+            return !operator==(other);
+        }
+
+        utf8string & operator+=(u32char_t c) {
+            push(c);
+            return *this;
+        }
+
+        utf8string & operator+=(u8char_t c) {
+            push(static_cast<u32char_t>(c));
+            return *this;
+        }
+
+        utf8string & operator+=(char c) {
+            push(static_cast<u32char_t>(c));
+            return *this;
+        }
+
+        utf8string & operator+=(const char *other) {
+            append(other);
+            return *this;            
+        }
+
+        utf8string & operator+=(const utf8string &other) {
+            append(other);
+            return *this;
+        }
+
+        utf8string & operator=(const char *other) {
+            release();
+            size_t length = strlen(other) + 1;
+            ensure_capacity(length);
+            copy_other(other, length);
+            return *this;
+        }
+
+        utf8string & operator=(const utf8string &other) {
+            release();
+            copy_other(other._data, other._length);
+            return *this;
+        }
+
+        utf8string & operator=(utf8string&& other) {
+            release();
+            move_other(std::move(other));
+            return *this;
+        }
+
+        utf8string() {
+            _length = 1;
+            _capacity = 1;
+            _data = nullptr;
+        }
+
+        utf8string(const char *other) {
+            size_t length = strlen(other) + 1;
+            init_buffer(length);
+            copy_other(other, length);
+        }
+
+        utf8string(const utf8string &other) {
+            init_buffer(other._length);
+            copy_other(other._data, other._length);
+        }
+
+        utf8string(utf8string &&other) {
+            move_other(std::move(other));
+        }
+
+        ~utf8string() {
+            release();
         }
     };
 };
