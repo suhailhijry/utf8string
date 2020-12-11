@@ -456,7 +456,7 @@ namespace ryuk {
         u8char_t *_data = nullptr;
         u8char_t _ssoData[SSO_SIZE];
         size_t _capacity = SSO_SIZE;
-        size_t _length;
+        size_t _length = 1;
 
         void grow_buffer(size_t amount) {
             size_t totalLength = _length + amount - 1;
@@ -509,6 +509,15 @@ namespace ryuk {
             _length += otherLength;
         }
 
+        void append_sso_to_buffer() {
+            if (_capacity == sso_capacity && _length > 1) {
+                ensure_capacity(_length + sso_capacity);
+                size_t oldLength = _length;
+                _length = 1;
+                append_other(_ssoData, oldLength);
+            }
+        }
+
         void ensure_capacity(size_t capacity) {
             assert(capacity != SIZE_MAX);
             if (capacity > _capacity) {
@@ -546,6 +555,12 @@ namespace ryuk {
             _capacity = 1;
         }
 
+        void reset_to_sso() {
+            if (_capacity > sso_capacity) {
+                release();
+                _capacity = sso_capacity;
+            }
+        }
     public:
         static constexpr size_t sso_capacity = SSO_SIZE;
 
@@ -643,12 +658,7 @@ namespace ryuk {
             if (_length + length < sso_capacity) {
                 append_other_sso(other, length + 1);
             } else {
-                if (_capacity == sso_capacity && _length > 1) {
-                    ensure_capacity(_length + sso_capacity);
-                    size_t oldLength = _length;
-                    _length = 1;
-                    append_other(_ssoData, oldLength);
-                }
+                append_sso_to_buffer();
                 ensure_capacity(_length + length);
                 append_other(other, length + 1);
             }
@@ -662,13 +672,7 @@ namespace ryuk {
                     append_other_sso(other._data, other._length);
                 }
             } else {
-                if (_capacity == sso_capacity && _length > 1) {
-                    ensure_capacity(_length + sso_capacity);
-                    size_t oldLength = _length;
-                    _length = 1;
-                    append_other(_ssoData, oldLength);
-                }
-
+                append_sso_to_buffer();
                 ensure_capacity(_length + other._length);
                 append_other(other._data, other._length);
             }
@@ -788,10 +792,7 @@ namespace ryuk {
                 ensure_capacity(length);
                 copy_other(other, length);
             } else {
-                if (_capacity > sso_capacity) {
-                    release();
-                    _capacity = sso_capacity;
-                }
+                reset_to_sso();
                 copy_other_sso(other, length);
             }
             return *this;
@@ -802,11 +803,7 @@ namespace ryuk {
                 ensure_capacity(other._length);
                 copy_other(other._data, other._length);
             } else {
-                if (_capacity > sso_capacity) {
-                    release();
-                    _capacity = sso_capacity;
-                }
-
+                reset_to_sso();
                 if (other._capacity == sso_capacity) {
                     copy_other_sso(other._ssoData);
                 } else {
@@ -822,11 +819,7 @@ namespace ryuk {
             return *this;
         }
 
-        basic_utf8string() {
-            _length = 1;
-            _capacity = sso_capacity == 0 ? 1 : sso_capacity;
-            _data = nullptr;
-        }
+        basic_utf8string() = default;
 
         basic_utf8string(const char *other) {
             size_t length = strlen(other) + 1;
