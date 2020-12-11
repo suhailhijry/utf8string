@@ -58,7 +58,7 @@ namespace ryuk {
             utf8string result(name);
             const char *testResult = func();
             if (testResult != nullptr) {
-                result += " failed due to: ";
+                result += " failed: ";
                 result += testResult;
                 result += '\n';
             } else {
