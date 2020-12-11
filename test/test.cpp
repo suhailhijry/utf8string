@@ -264,6 +264,34 @@ const char *utf8_string_append_u8constcharp() {
     return nullptr;
 }
 
+const char *utf8_string_iterate() {
+    utf8string string(hello_world_long_u8);
+
+    size_t count = string.count();
+    size_t itrCount = 0;
+    for (auto itr = string.begin(); itr != string.end(); ++itr) {
+        test_assert(*itr == string[itrCount], "iteration character does not match actual character");
+        ++itrCount;
+    }
+    test_assert(itrCount == count, "iteration count does not match actual count");
+
+    return nullptr;
+}
+
+const char *utf8_string_iterate_for() {
+    utf8string string(hello_world_long_u8);
+
+    size_t count = string.count();
+    size_t itrCount = 0;
+    for (auto c : string) {
+        test_assert(c == string[itrCount], "iteration character does not match actual character");
+        ++itrCount;
+    }
+    test_assert(itrCount == count, "iteration count does not match actual count");
+
+    return nullptr;
+}
+
 #define run_test(func) tests::run_test((#func), (func))
 
 int main() {
@@ -277,4 +305,6 @@ int main() {
     run_test(utf8_string_append_constcharp);
     run_test(utf8_string_construct_with_u8constcharp);
     run_test(utf8_string_append_u8constcharp);
+    run_test(utf8_string_iterate);
+    run_test(utf8_string_iterate_for);
 }
