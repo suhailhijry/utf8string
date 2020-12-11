@@ -40,6 +40,16 @@ namespace {
     constexpr const char *bye_world_u8 = "وداعاً أيها العالم.";
     constexpr size_t bye_world_u8_length = 35;
     constexpr size_t bye_world_u8_count = 19;
+    constexpr const char *hello_world_long = "Hello, world!, Hello, world!, Hello, world!, Hello, world!, Hello, world!, Hello, world!.";
+    constexpr size_t hello_world_long_length = 89;
+    constexpr const char *bye_world_long = "Goodbye, world. Goodbye, world. Goodbye, world. Goodbye, world. Goodbye, world. Goodbye, world.";
+    constexpr size_t bye_world_long_length = 95;
+    constexpr const char *hello_world_long_u8 = "مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!.";
+    constexpr size_t hello_world_long_u8_length = 179;
+    constexpr size_t hello_world_long_u8_count = 101;
+    constexpr const char *bye_world_long_u8 = "وداعاً أيها العالم. وداعاً أيها العالم. وداعاً أيها العالم. وداعاً أيها العالم. وداعاً أيها العالم.";
+    constexpr size_t bye_world_long_u8_length = 179;
+    constexpr size_t bye_world_long_u8_count = 99;
 };
 
 const char *utf8_string_construct_with_constcharp_sso() {
@@ -59,6 +69,9 @@ const char *utf8_string_construct_with_constcharp_sso() {
 
     utf8string other_not_equals(bye_world);
     test_assert(string != other_not_equals, "unequal strings are equal");
+
+    test_assert(string == hello_world, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
 
     return nullptr;
 }
@@ -81,6 +94,9 @@ const char *utf8_string_append_constcharp_sso() {
 
     utf8string other_not_equals(bye_world);
     test_assert(string != other_not_equals, "unequal strings are equal");
+
+    test_assert(string == hello_world, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
 
     return nullptr;
 }
@@ -119,6 +135,9 @@ const char *utf8_string_construct_with_u8constcharp_sso() {
     utf8string other_not_equals(bye_world_u8);
     test_assert(string != other_not_equals, "unequal strings are equal");
 
+    test_assert(string == hello_world_u8, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
+
     return nullptr;
 }
 
@@ -141,6 +160,9 @@ const char *utf8_string_append_u8constcharp_sso() {
     utf8string other_not_equals(bye_world_u8);
     test_assert(string != other_not_equals, "unequal strings are equal");
 
+    test_assert(string == hello_world_u8, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
+
     return nullptr;
 }
 
@@ -160,6 +182,88 @@ const char *utf8_string_append_u8char_sso() {
     return nullptr;
 }
 
+const char *utf8_string_construct_with_constcharp() {
+    utf8string string(hello_world_long);
+
+    test_assert(string.size() == hello_world_long_length, "invalid size");
+    test_assert(string.count() == hello_world_long_length, "invalid count");
+
+    test_assert(string == hello_world_long, "invalid content");
+
+    utf8string other_equals(hello_world_long);
+    test_assert(string == other_equals, "equal strings are not equal");
+
+    utf8string other_not_equals(bye_world);
+    test_assert(string != other_not_equals, "unequal strings are equal");
+
+    test_assert(string == hello_world_long, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
+
+    return nullptr;
+}
+
+const char *utf8_string_append_constcharp() {
+    utf8string string;
+    string += hello_world_long;
+
+    test_assert(string.size() == hello_world_long_length, "invalid size");
+    test_assert(string.count() == hello_world_long_length, "invalid count");
+
+    test_assert(string == hello_world_long, "invalid content");
+
+    utf8string other_equals(hello_world_long);
+    test_assert(string == other_equals, "equal strings are not equal");
+
+    utf8string other_not_equals(bye_world);
+    test_assert(string != other_not_equals, "unequal strings are equal");
+
+    test_assert(string == hello_world_long, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
+
+    return nullptr;
+}
+
+const char *utf8_string_construct_with_u8constcharp() {
+    utf8string string(hello_world_long_u8);
+
+    test_assert(string.size() == hello_world_long_u8_length, "invalid size");
+    test_assert(string.count() == hello_world_long_u8_count, "invalid count");
+
+    test_assert(string == hello_world_long_u8, "invalid content");
+
+    utf8string other_equals(hello_world_long_u8);
+    test_assert(string == other_equals, "equal strings are not equal");
+
+    utf8string other_not_equals(bye_world);
+    test_assert(string != other_not_equals, "unequal strings are equal");
+
+    test_assert(string == hello_world_long_u8, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
+
+    return nullptr;
+}
+
+const char *utf8_string_append_u8constcharp() {
+    utf8string string;
+    string += hello_world_long_u8;
+
+    test_assert(string.size() == hello_world_long_u8_length, "invalid size");
+    test_assert(string.count() == hello_world_long_u8_count, "invalid count");
+
+    test_assert(string == hello_world_long_u8, "invalid content");
+
+    utf8string other_equals(hello_world_long_u8);
+    test_assert(string == other_equals, "equal strings are not equal");
+
+    utf8string other_not_equals(bye_world);
+    test_assert(string != other_not_equals, "unequal strings are equal");
+
+    test_assert(string == hello_world_long_u8, "string is not equal to c-string");
+    test_assert(string != bye_world, "string is equal to invalid c-string");
+
+    return nullptr;
+}
+
 #define run_test(func) tests::run_test((#func), (func))
 
 int main() {
@@ -169,4 +273,8 @@ int main() {
     run_test(utf8_string_construct_with_u8constcharp_sso);
     run_test(utf8_string_append_u8constcharp_sso);
     run_test(utf8_string_append_u8char_sso);
+    run_test(utf8_string_construct_with_constcharp);
+    run_test(utf8_string_append_constcharp);
+    run_test(utf8_string_construct_with_u8constcharp);
+    run_test(utf8_string_append_u8constcharp);
 }
