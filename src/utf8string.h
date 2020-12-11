@@ -41,7 +41,6 @@
 #include <stdlib.h>
 #include <utility>
 #include <ostream>
-#include <istream>
 
 namespace ryuk {
     using u8char_t = unsigned char;
@@ -858,14 +857,6 @@ namespace ryuk {
             }
 
             return os << reinterpret_cast<const char *>(str._data);
-        }
-
-        friend std::istream & operator>>(std::istream &is, const basic_utf8string &str) {
-            if (str._capacity == basic_utf8string::sso_capacity) {
-                return is >> str._ssoData;
-            }
-
-            return is >> str._data;
         }
     };
 
