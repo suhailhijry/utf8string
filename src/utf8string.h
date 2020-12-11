@@ -584,33 +584,34 @@ namespace ryuk {
 
         basic_utf8string_iterator begin() const {
             if (_capacity == sso_capacity) {
-                return basic_utf8string_iterator(_ssoData, _ssoData + _length);
+                u8char_t *data = const_cast<u8char_t *>(_ssoData);
+                return basic_utf8string_iterator(data, data + size());
             }
 
-            return basic_utf8string_iterator(_data, _data + _length);
+            return basic_utf8string_iterator(_data, _data + size());
         }
 
         basic_utf8string_iterator end() const {
-            u8char_t *end = _ssoData + _length;
+            u8char_t *end = const_cast<u8char_t *>(_ssoData) + size();
             if (_capacity == sso_capacity) {
                 return basic_utf8string_iterator(end, end);
             }
 
-            end = _data + _length;
+            end = _data + size();
             return basic_utf8string_iterator(end, end);
         }
 
-        size_t size() {
+        size_t size() const {
             return _length - 1;
         }
 
-        size_t capacity() {
+        size_t capacity() const {
             return _capacity - 1;
         }
 
-        size_t count() {
+        size_t count() const {
             if (_capacity == sso_capacity) {
-                return internal::distance(_ssoData, &_ssoData[_length - 1]);
+                return internal::distance(const_cast<u8char_t *>(_ssoData), &const_cast<u8char_t *>(_ssoData)[_length - 1]);
             }
 
             return internal::distance(_data, &_data[_length - 1]);
