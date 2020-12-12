@@ -36,7 +36,7 @@ A header only, drop in replacement for std::string with full support for UTF-8.
 
 * This class employs small string optimization (SSO), with the SSO buffer having the size 32 by default, you can change this simply by creating a different template of the class: ```using myutf8string = ryuk::basic_utf8string<YOUR_SSO_LENGTH>;```. This should create a specialization of the class with your own SSO buffer length.
 
-* This class only supports c++11 and above at the mooment.
+* This class only supports c++11 and above at the moment.
 
 ## Contribution
 * All contributions are welcome, feel free to submit a PR anytime.
