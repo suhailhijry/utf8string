@@ -4,13 +4,13 @@ A header only, drop in replacement for std::string with full support for UTF-8.
 
 ## Usage
 
-```
+```c++
     // you can put the header in your 'include' folder
     #import <utf8string.h>
     ...
     ryuk::utf8string str0; // empty string
     ryuk::utf8string str1("Hello, world!"); // from c-string
-    str0 = "Hello, world!; // from c-string
+    str0 = "Hello, world!"; // from c-string
     str1 = str0; // from another ryuk::utf8string
     str0 += 'A'; // append char
     str0 += U'\x645'; // append unicode code point
