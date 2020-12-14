@@ -292,6 +292,58 @@ const char *utf8_string_iterate_for() {
     return nullptr;
 }
 
+const char *utf8_string_pop_short() {
+    utf8string string(hello_world);
+
+    size_t count = string.count();
+    u32char_t popped = string.pop();
+    test_assert(popped == hello_world[hello_world_length - 1], "invalid popped character");
+    test_assert(string.count() == count - 1, "invalid count after pop");
+    test_assert(string == "Hello, world", "invalid string after pop");
+
+    return nullptr;
+}
+
+const char *utf8_string_pop_short_u8() {
+    utf8string string(hello_world_u8);
+
+    size_t count = string.count();
+    u32char_t popped = string.pop();
+    u8char_t *data = reinterpret_cast<u8char_t *>(const_cast<char *>(hello_world_u8));
+    u8char_t *pos = &data[hello_world_u8_length];
+    test_assert(popped == internal::previous(pos, data), "invalid popped character");
+    test_assert(string.count() == count - 1, "invalid count after pop");
+    test_assert(string == "مرحباً بالعالم", "invalid string after pop");
+
+    return nullptr;
+}
+
+const char *utf8_string_pop_long() {
+    utf8string string(hello_world_long);
+
+    size_t count = string.count();
+    u32char_t popped = string.pop();
+    test_assert(popped == hello_world_long[hello_world_long_length - 1], "invalid popped character");
+    test_assert(string.count() == count - 1, "invalid count after pop");
+    test_assert(string == "Hello, world!, Hello, world!, Hello, world!, Hello, world!, Hello, world!, Hello, world!", "invalid string after pop");
+
+    return nullptr;
+}
+
+const char *utf8_string_pop_long_u8() {
+    utf8string string(hello_world_long_u8);
+
+    size_t count = string.count();
+    u32char_t popped = string.pop();
+    u8char_t *data = reinterpret_cast<u8char_t *>(const_cast<char *>(hello_world_long_u8));
+    u8char_t *pos = &data[hello_world_long_u8_length];
+    test_assert(popped == internal::previous(pos, data), "invalid popped character");
+    test_assert(string.count() == count - 1, "invalid count after pop");
+    test_assert(string == "مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!, مرحباً بالعالم!", "invalid string after pop");
+
+    return nullptr;
+}
+
 #define run_test(func) tests::run_test((#func), (func))
 
 int main() {
@@ -307,4 +359,8 @@ int main() {
     run_test(utf8_string_append_u8constcharp);
     run_test(utf8_string_iterate);
     run_test(utf8_string_iterate_for);
+    run_test(utf8_string_pop_short);
+    run_test(utf8_string_pop_short_u8);
+    run_test(utf8_string_pop_long);
+    run_test(utf8_string_pop_long_u8);
 }
