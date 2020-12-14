@@ -572,7 +572,6 @@ namespace ryuk {
             other._capacity = 0;
             other._length = 0;
             other._data = nullptr;
-            other._ssoData = nullptr;
         }
 
         void append_other(const void* other, size_t otherLength) {
@@ -786,7 +785,7 @@ namespace ryuk {
             return *itr;
         }
 
-        basic_utf8string_iterator find(const char *substring) {
+        basic_utf8string_iterator find(const char *substring) const {
             assert(substring);
             if (_length <= 1) return end();
 
@@ -823,6 +822,11 @@ namespace ryuk {
             }
 
             return end();
+        }
+
+        basic_utf8string_iterator find(const basic_utf8string &other) const {
+            if (_length <= 1 || other._length <= 1) return end();
+            return find(reinterpret_cast<const char *>(other.get_storage()));
         }
 
         u32char_t operator[](size_t index) const {
