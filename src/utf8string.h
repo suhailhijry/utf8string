@@ -377,10 +377,6 @@ namespace ryuk {
         u8char_t *_end;
         u8char_t *_current;
 
-        bool ends_equal(const basic_utf8string_iterator &other) {
-            return _begin == other._begin && _end == other._end;
-        }
-
     public:
         basic_utf8string_iterator(u8char_t *begin, u8char_t *end) : _begin(begin), _end(end) {
             assert(begin);
@@ -450,6 +446,84 @@ namespace ryuk {
 
         u8char_t *end() {
             return _end;
+        }
+    };
+
+    class basic_utf8string_reverse_iterator {
+    private:
+        u8char_t *_rbegin;
+        u8char_t *_rend;
+        u8char_t *_current;
+
+    public:
+        basic_utf8string_reverse_iterator(u8char_t *rbegin, u8char_t *rend) : _rbegin(rbegin), _rend(rend) {
+            assert(rbegin);
+            assert(rend);
+            _current = rbegin;
+        }
+
+        ~basic_utf8string_reverse_iterator() = default;
+        basic_utf8string_reverse_iterator(const basic_utf8string_reverse_iterator &) = default;
+        basic_utf8string_reverse_iterator(basic_utf8string_reverse_iterator &&) = default;
+        basic_utf8string_reverse_iterator & operator=(const basic_utf8string_reverse_iterator &) = default;
+        basic_utf8string_reverse_iterator & operator=(basic_utf8string_reverse_iterator &&) = default;
+
+        bool operator==(const basic_utf8string_reverse_iterator &other) {
+            return (_current == other._current);
+        }
+
+        bool operator!=(const basic_utf8string_reverse_iterator &other) {
+            return !(operator==(other));
+        }
+
+        basic_utf8string_reverse_iterator & operator++() {
+            internal::previous(_current, _rend);
+            return *this;
+        }
+
+        basic_utf8string_reverse_iterator operator++(int) {
+            basic_utf8string_reverse_iterator temp = *this;
+            internal::previous(_current, _rend);
+            return temp;
+        }
+
+        basic_utf8string_reverse_iterator & operator--() {
+            internal::next(_current, _rbegin);
+            return *this;
+        }
+
+        basic_utf8string_reverse_iterator operator--(int) {
+            basic_utf8string_reverse_iterator temp = *this;
+            internal::next(_current, _rbegin);
+            return temp;
+        }
+
+        u32char_t operator*() {
+            return internal::peek_next(_current, _rend);
+        }
+
+        bool operator<(const basic_utf8string_reverse_iterator &other) {
+            return (_current > other._current);
+        }
+
+        bool operator>(const basic_utf8string_reverse_iterator &other) {
+            return (_current < other._current);
+        }
+
+        bool operator<=(const basic_utf8string_reverse_iterator &other) {
+            return (_current >= other._current);
+        }
+
+        bool operator>=(const basic_utf8string_reverse_iterator &other) {
+            return (_current <= other._current);
+        }
+
+        u8char_t *begin() {
+            return _rbegin;
+        }
+
+        u8char_t *end() {
+            return _rend;
         }
     };
 
@@ -598,6 +672,16 @@ namespace ryuk {
         basic_utf8string_iterator end() const {
             u8char_t *end = get_storage() + size();
             return basic_utf8string_iterator(end, end);
+        }
+
+        basic_utf8string_reverse_iterator rbegin() const {
+            u8char_t *data = get_storage();
+            return basic_utf8string_reverse_iterator(data + size() - 1, data - 1);
+        }
+
+        basic_utf8string_reverse_iterator rend() const {
+            u8char_t *end = get_storage() - 1;
+            return basic_utf8string_reverse_iterator(end, end);
         }
 
         size_t size() const {
@@ -831,6 +915,7 @@ namespace ryuk {
 
     using utf8string = basic_utf8string<32>;
     using utf8string_iterator = basic_utf8string_iterator;
+    using utf8string_reverse_iterator = basic_utf8string_reverse_iterator;
 };
 
 #endif
