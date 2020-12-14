@@ -656,7 +656,9 @@ namespace ryuk {
         }
 
         void shrink_to_fit() {
-            resize(_length);
+            if (_length > sso_capacity) {
+                resize(_length);
+            }
         }
 
         const u8char_t *get_raw() {
