@@ -786,6 +786,45 @@ namespace ryuk {
             return *itr;
         }
 
+        basic_utf8string_iterator find(const char *substring) {
+            assert(substring);
+            if (_length <= 1) return end();
+
+            size_t substringLength = strlen(substring);
+            if (substringLength == 0) return end();
+            if (substringLength >= _length) return end();
+
+            size_t currentSubstringIndex = 0;
+            char currentSubstringChar = substring[currentSubstringIndex];
+            size_t currentCharIndex = 0;
+            u8char_t currentChar = get_storage()[currentCharIndex];
+            size_t foundIndex = 0;
+            while (currentChar != '\0') {
+                if (currentSubstringChar == currentChar) {
+                    if (foundIndex == 0 && currentSubstringIndex == 0) {
+                        foundIndex = currentCharIndex;
+                    }
+                    currentSubstringChar = substring[++currentSubstringIndex];
+                    if (currentSubstringIndex == substringLength) {
+                        break;
+                    }
+                } else {
+                    currentSubstringIndex = foundIndex = 0;
+                    currentSubstringChar = substring[currentSubstringIndex];
+                }
+                ++currentCharIndex;
+                currentChar = get_storage()[currentCharIndex];
+            }
+
+            if (currentSubstringIndex == substringLength) {
+                u8char_t *begin = get_storage() + foundIndex;
+                u8char_t *end = begin + currentSubstringIndex;
+                return basic_utf8string_iterator(begin, end);
+            }
+
+            return end();
+        }
+
         u32char_t operator[](size_t index) const {
             return at(index);
         }
