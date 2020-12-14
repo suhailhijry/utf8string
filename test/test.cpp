@@ -292,6 +292,21 @@ const char *utf8_string_iterate_for() {
     return nullptr;
 }
 
+const char *utf8_string_iterator_operators() {
+    utf8string string(hello_world_long_u8);
+    using iterator_t = basic_utf8string_iterator;
+    iterator_t iter = string.begin();
+    u32char_t startChar = *iter;
+    iter++;
+    u32char_t secondChar = *iter;
+    test_assert(startChar == *(--iter), "invalid code point after --iter");
+    test_assert(secondChar == *(++iter), "invalid code point after ++iter");
+    test_assert(secondChar == *(iter--), "invalid code point after iter--");
+    test_assert(startChar == *iter, "invalid code point after all operators");
+
+    return nullptr;
+}
+
 const char *utf8_string_pop_short() {
     utf8string string(hello_world);
 
@@ -359,6 +374,7 @@ int main() {
     run_test(utf8_string_append_u8constcharp);
     run_test(utf8_string_iterate);
     run_test(utf8_string_iterate_for);
+    run_test(utf8_string_iterator_operators);
     run_test(utf8_string_pop_short);
     run_test(utf8_string_pop_short_u8);
     run_test(utf8_string_pop_long);
