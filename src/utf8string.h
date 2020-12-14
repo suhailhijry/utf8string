@@ -377,6 +377,10 @@ namespace ryuk {
         u8char_t *_end;
         u8char_t *_current;
 
+        bool ends_equal(const basic_utf8string_iterator &other) {
+            return _begin == other._begin && _end == other._end;
+        }
+
     public:
         basic_utf8string_iterator(u8char_t *begin, u8char_t *end) : _begin(begin), _end(end) {
             assert(begin);
@@ -458,11 +462,7 @@ namespace ryuk {
         size_t _length = 1;
 
         u8char_t *get_storage() const {
-            if (_capacity == SSO_SIZE) {
-                return const_cast<u8char_t *>(_ssoData);
-            } else {
-                return _data;
-            }
+            return const_cast<u8char_t *>(_capacity == SSO_SIZE ? _ssoData : _data);
         }
 
         void grow_buffer(size_t amount) {
@@ -830,6 +830,7 @@ namespace ryuk {
     };
 
     using utf8string = basic_utf8string<32>;
+    using utf8string_iterator = basic_utf8string_iterator;
 };
 
 #endif
