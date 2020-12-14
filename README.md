@@ -7,9 +7,12 @@ A header only, drop in replacement for std::string with full support for UTF-8.
 ```c++
     // you can put the header in your 'include' folder
     #import <utf8string.h>
+    using namespace ryuk;
+
     ...
-    ryuk::utf8string str0; // empty string
-    ryuk::utf8string str1("Hello, world!"); // from c-string
+
+    utf8string str0; // empty string
+    utf8string str1("Hello, world!"); // from c-string
     str0 = "Hello, world!"; // from c-string
     str1 = str0; // from another ryuk::utf8string
     str0 += 'A'; // append char
@@ -17,13 +20,35 @@ A header only, drop in replacement for std::string with full support for UTF-8.
     str0 += "appended"; // append c-string
     str1 += str0; // append another ryuk::utf8string
 
+    str1.push(U'\x645'); // push a code point to the end of the string, this is equivalent to the += operator
+    u32char_t cp = str1.pop(); // pop a code point from the end of the string, cp should equal U'\x645' or 'م'
+
+    u8char_t o = str1.octet_at(0); // returns the octet at the specified index, not that this may not be an actual character
+    u32char_t c = str1.at(0); // returns the code point (character) at specified index, this is equivalent to the [] (indexing) operator
+
     for (auto c : str1) {
         // iterate over the string
+    }
+
+    for (auto itr = str1.rbegin(); itr != str1.rend(); ++itr) {
+        // reverse-iterate the string
+        u32char_t c = *itr; // get the current code point
     }
 
     size_t capacity = str1.capacity(); // capacity
     size_t size = str1.size(); // octet count
     size_t count = str1.count(); // actual code point count
+
+    auto found = str1.find("world"); // find a substring
+    if (found != str1.end()) {
+        // found the substring
+    }
+
+    const u8char_t *raw = str1.get_raw(); // get the raw data buffer, warning: modifying it is UNDIFINED
+    const char *cstring = reinterpret_cast<const char *>(raw); // cast to c-string
+
+    str1.shrink_to_fit(); // shrink the string buffer memory to fit its actual content
+    str1.grow(10); // grow the string to fit (at least) 10 more octets
 ```
 
 ## Remarks
