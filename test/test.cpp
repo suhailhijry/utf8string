@@ -310,6 +310,39 @@ const char *utf8_string_iterator_operators() {
     return nullptr;
 }
 
+const char *utf8_string_iterate_reverse() {
+    utf8string string(hello_world_long_u8);
+
+    size_t count = string.count();
+    size_t itrCount = count;
+    for (auto itr = string.rbegin(); itr != string.rend(); ++itr) {
+        test_assert(*itr == string[itrCount - 1], "iteration character does not match actual character");
+        --itrCount;
+    }
+
+    test_assert(itrCount == 0, "iteration count does not match actual count");
+
+    return nullptr;
+}
+
+const char *utf8_string_reverse_iterator_operators() {
+    utf8string string(hello_world_long_u8);
+    using iterator_t = utf8string_reverse_iterator;
+    iterator_t iter = string.rbegin();
+    u32char_t startChar = *iter;
+    iter++;
+    u32char_t secondChar = *iter;
+    test_assert(iter > string.rbegin() && string.rbegin() < iter, "invalid position after iter++");
+    test_assert(startChar == *(--iter), "invalid code point after --iter");
+    test_assert(iter >= string.rbegin() && string.rbegin() <= iter, "invalid position after --iter");
+    test_assert(secondChar == *(++iter), "invalid code point after ++iter");
+    test_assert(secondChar == *(iter--), "invalid code point after iter--");
+    test_assert(startChar == *iter, "invalid code point after advance and revert operators");
+    test_assert(iter == string.rbegin() && iter != string.rend(), "invalid iterator position after advance and revert operators");
+
+    return nullptr;
+}
+
 const char *utf8_string_pop_short() {
     utf8string string(hello_world);
 
@@ -378,6 +411,8 @@ int main() {
     run_test(utf8_string_iterate);
     run_test(utf8_string_iterate_for);
     run_test(utf8_string_iterator_operators);
+    run_test(utf8_string_iterate_reverse);
+    run_test(utf8_string_reverse_iterator_operators);
     run_test(utf8_string_pop_short);
     run_test(utf8_string_pop_short_u8);
     run_test(utf8_string_pop_long);
