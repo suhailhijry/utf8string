@@ -457,6 +457,14 @@ namespace ryuk {
         size_t _capacity = SSO_SIZE;
         size_t _length = 1;
 
+        u8char_t *get_storage() const {
+            if (_capacity == SSO_SIZE) {
+                return const_cast<u8char_t *>(_ssoData);
+            } else {
+                return _data;
+            }
+        }
+
         void grow_buffer(size_t amount) {
             size_t totalLength = _length + amount - 1;
             if (_capacity < totalLength) {
@@ -519,7 +527,7 @@ namespace ryuk {
 
         void ensure_capacity(size_t capacity) {
             assert(capacity != SIZE_MAX);
-            if (capacity > _capacity) {
+            if (capacity > _capacity && capacity > sso_capacity) {
                 grow(capacity - _capacity);
             }
         }
@@ -579,25 +587,16 @@ namespace ryuk {
         }
 
         const u8char_t *get_raw() {
-            return _data;
+            return get_storage();
         }
 
         basic_utf8string_iterator begin() const {
-            if (_capacity == sso_capacity) {
-                u8char_t *data = const_cast<u8char_t *>(_ssoData);
-                return basic_utf8string_iterator(data, data + size());
-            }
-
-            return basic_utf8string_iterator(_data, _data + size());
+            u8char_t *data = get_storage();
+            return basic_utf8string_iterator(data, data + size());
         }
 
         basic_utf8string_iterator end() const {
-            u8char_t *end = const_cast<u8char_t *>(_ssoData) + size();
-            if (_capacity == sso_capacity) {
-                return basic_utf8string_iterator(end, end);
-            }
-
-            end = _data + size();
+            u8char_t *end = get_storage() + size();
             return basic_utf8string_iterator(end, end);
         }
 
@@ -610,11 +609,8 @@ namespace ryuk {
         }
 
         size_t count() const {
-            if (_capacity == sso_capacity) {
-                return internal::distance(const_cast<u8char_t *>(_ssoData), &const_cast<u8char_t *>(_ssoData)[_length - 1]);
-            }
-
-            return internal::distance(_data, &_data[_length - 1]);
+            u8char_t *data = get_storage();
+            return internal::distance(data, &data[_length - 1]);
         }
 
         void clear() {
@@ -629,20 +625,13 @@ namespace ryuk {
             --_length;
 
             size_t seqlen = internal::sequence_length(c);
+            u8char_t *data = get_storage();
+            ensure_capacity(_length + seqlen + 1);
 
-            if (_length + seqlen + 1 < sso_capacity) {
-                internal::append(c, &_ssoData[_length]);
-                _length += seqlen;
-                _ssoData[_length] = '\0';
-                ++_length;
-            } else {
-                //                               + 1 for the null terminator
-                ensure_capacity(_length + seqlen + 1);
-                internal::append(c, &_data[_length]);
-                _length += seqlen;
-                _data[_length] = '\0';
-                ++_length;
-            }
+            internal::append(c, &data[_length]);
+            _length += seqlen;
+            data[_length] = '\0';
+            ++_length;
         }
 
         void push(u8char_t c) {
@@ -651,6 +640,24 @@ namespace ryuk {
 
         void push(char c) {
             push(static_cast<u32char_t>(c));
+        }
+
+        u32char_t pop() {
+            // remove the null terminator
+            if (_length == 1) {
+                return 0;
+            }
+
+            --_length;
+
+            u32char_t result = 0;
+            u8char_t *data = get_storage();
+            u8char_t *pos = &data[_length];
+            result = internal::previous(pos, data);
+            if (result != 0) {
+                data[_length - 1] = '\0';
+            }
+            return result;
         }
 
         void append(const char *other) {
@@ -666,11 +673,7 @@ namespace ryuk {
 
         void append(const basic_utf8string &other) {
             if (_length + other._length - 1 < sso_capacity) {
-                if (other._capacity == sso_capacity) {
-                    append_other_sso(other._ssoData, other._length);
-                } else {
-                    append_other_sso(other._data, other._length);
-                }
+                append_other_sso(other.get_storage(), other._length);
             } else {
                 append_sso_to_buffer();
                 ensure_capacity(_length + other._length);
@@ -708,19 +711,10 @@ namespace ryuk {
             if (length != _length) { return false; }
 
             int result = 0;
-
-            if (_capacity == sso_capacity) {
-                result = memcmp(_ssoData, other, _length * sizeof(u8char_t));
-            } else {
-                result = memcmp(_data, other, _length * sizeof(u8char_t));
-            }
+            result = memcmp(get_storage(), other, _length * sizeof(u8char_t));
 
             // a result of 0 means identical
-            if (result == 0) {
-                return true;
-            }
-
-            return false;
+            return result == 0;
         }
 
         bool operator!=(const char *other) const {
@@ -730,28 +724,10 @@ namespace ryuk {
         bool operator==(const basic_utf8string &other) const {
             if (_length != other._length) { return false; }
 
-            int result = 0;
-
-            if (_capacity == sso_capacity) {
-                if (other._capacity == sso_capacity) {
-                    result = memcmp(_ssoData, other._ssoData, _length * sizeof(u8char_t));
-                } else {
-                    result = memcmp(_ssoData, other._data, _length * sizeof(u8char_t));
-                }
-            } else {
-                if (other._capacity == sso_capacity) {
-                    result = memcmp(_data, other._ssoData, _length * sizeof(u8char_t));
-                } else {
-                    result = memcmp(_data, other._data, _length * sizeof(u8char_t));
-                }
-            }
+            int result = memcmp(get_storage(), other.get_storage(), _length * sizeof(u8char_t));
 
             // a result of 0 means identical
-            if (result == 0) {
-                return true;
-            }
-
-            return false;
+            return result == 0;
         }
 
         bool operator!=(const basic_utf8string &other) const {
@@ -804,11 +780,7 @@ namespace ryuk {
                 copy_other(other._data, other._length);
             } else {
                 reset_to_sso();
-                if (other._capacity == sso_capacity) {
-                    copy_other_sso(other._ssoData);
-                } else {
-                    copy_other_sso(other._data);
-                }
+                copy_other_sso(other.get_storage());
             }
             return *this;
         }
@@ -836,11 +808,7 @@ namespace ryuk {
                 init_buffer(other._length);
                 copy_other(other._data, other._length);
             } else {
-                if (other._capacity == sso_capacity) {
-                    copy_other_sso(other._ssoData, other._length);
-                } else {
-                    copy_other_sso(other._data, other._length);
-                }
+                copy_other_sso(other.get_storage(), other._length);
             }
         }
 
