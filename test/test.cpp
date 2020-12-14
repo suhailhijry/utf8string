@@ -395,6 +395,40 @@ const char *utf8_string_pop_long_u8() {
     return nullptr;
 }
 
+const char *utf8_string_find() {
+    utf8string string(hello_world);
+    using iterator_t = basic_utf8string_iterator;
+
+    iterator_t found = string.find("Hello");
+    test_assert(found == string.begin(), "failed to find substring at the start of string");
+    test_assert(*found++ == 'H', "invalid character 0 at the start of string");
+    test_assert(*found++ == 'e', "invalid character 1 at the start of string");
+    test_assert(*found++ == 'l', "invalid character 2 at the start of string");
+    test_assert(*found++ == 'l', "invalid character 3 at the start of string");
+    test_assert(*found++ == 'o', "invalid character 4 at the start of string");
+    found = string.find("ld.");
+    test_assert(found == string.end(), "substring should not be found");
+    found = string.find("llo, wor");
+    test_assert(found != string.end(), "failed to find substring at the middle of string");
+    test_assert(*found++ == 'l', "invalid character 0 at the middle of string");
+    test_assert(*found++ == 'l', "invalid character 1 at the middle of string");
+    test_assert(*found++ == 'o', "invalid character 2 at the middle of string");
+    test_assert(*found++ == ',', "invalid character 3 at the middle of string");
+    test_assert(*found++ == ' ', "invalid character 4 at the middle of string");
+    test_assert(*found++ == 'w', "invalid character 5 at the middle of string");
+    test_assert(*found++ == 'o', "invalid character 6 at the middle of string");
+    test_assert(*found++ == 'r', "invalid character 7 at the middle of string");
+    found = string.find("orld!");
+    test_assert(found != string.end(), "failed to find substring at the end of string");
+    test_assert(*found++ == 'o', "invalid character 0 at the end of string");
+    test_assert(*found++ == 'r', "invalid character 1 at the end of string");
+    test_assert(*found++ == 'l', "invalid character 2 at the end of string");
+    test_assert(*found++ == 'd', "invalid character 3 at the end of string");
+    test_assert(*found++ == '!', "invalid character 4 at the end of string");
+
+    return nullptr;
+}
+
 #define run_test(func) tests::run_test((#func), (func))
 
 int main() {
@@ -417,4 +451,5 @@ int main() {
     run_test(utf8_string_pop_short_u8);
     run_test(utf8_string_pop_long);
     run_test(utf8_string_pop_long_u8);
+    run_test(utf8_string_find);
 }
